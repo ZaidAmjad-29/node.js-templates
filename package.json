@@ -1,0 +1,22 @@
+{
+  "name": "nators",
+  "version": "1.0.0",
+  "description": "learning node, express and mongoDB",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon server.js",
+    "start:prod": "NODE_ENV=development nodemon server.js"
+  },
+  "author": "zaid amjad",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.12.0",
+    "mongoose": "^5.13.23",
+    "morgan": "^1.10.0",
+    "validator": "^13.12.0"
+  }
+}
