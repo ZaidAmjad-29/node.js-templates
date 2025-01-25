@@ -11,13 +11,16 @@ const {
   getTourStat,
   // getMonthlyPlan,
 } = require('./../controllers/tourController');
-
-// router.param('id', checkID);
+const authController = require('./../controllers/authController');
 
 router.route('/top-5-cheap').get(cheapTours, getAllTours);
 // router.route('/monthly-plan').get(getMonthlyPlan);
 router.route('/tour-stats').get(getTourStat);
-router.route('/:id').get(getTour).delete(deleteTour).patch(updateTour);
-router.route('/').get(getAllTours).post(createTour);
+router
+  .route('/:id')
+  .get(getTour)
+  .patch(updateTour)
+  .delete(authController.protect, authController.restricTo('admin', 'lead-guide'), deleteTour);
+router.route('/').get(authController.protect, getAllTours).post(createTour);
 
 module.exports = router;
