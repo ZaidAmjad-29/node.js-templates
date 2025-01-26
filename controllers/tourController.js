@@ -11,15 +11,6 @@ exports.cheapTours = (req, res, next) => {
   console.log('top 5 cheap tours');
   next();
 };
-// exports.checkID = (req, res, next, val) => {
-//   if (req.params.id * 1 > tours.length) {
-//     return res.status(404).json({
-//       status: 'Fail',
-//       message: 'Invalid id',
-//     });
-//   }
-//   next();
-// };
 
 exports.getAllTours = catchAsync(async (req, res, next) => {
   const queryObj = { ...req.query };

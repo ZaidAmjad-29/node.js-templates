@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { type } = require('os');
 // const { use } = require('./../Routers/tourRouter');
 
 const userSchema = mongoose.Schema({
@@ -44,6 +45,16 @@ const userSchema = mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
+});
+
+userSchema.pre(/^find/, function (next) {
+  this.find({ active: true });
+  next();
 });
 
 userSchema.pre('save', function (next) {

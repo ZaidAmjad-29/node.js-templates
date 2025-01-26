@@ -13,26 +13,19 @@ const signToken = (id) => {
   });
 };
 
-exports.signUp = catchasync(async (req, res, next) => {
-  const newUser = await User.create(req.body);
-  // const newUser = await User.create({
-  //   name: req.body.name,
-  //   email: req.body.email,
-  //   password: req.body.password,
-  //   passwordConfirm: req.body.passwordConfirm,
-  //   role: req.body.role,
-  // });
-
-  const token = signToken(newUser._id);
-
-  //   console.log(newUser);
-  res.status(201).json({
+const sendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  res.status(statusCode).json({
     status: true,
     token,
-    data: {
-      user: newUser,
-    },
+    data: user,
   });
+};
+
+exports.signUp = catchasync(async (req, res, next) => {
+  const newUser = await User.create(req.body);
+
+  sendToken(newUser, 201, res);
 });
 
 exports.login = catchasync(async (req, res, next) => {
@@ -51,12 +44,7 @@ exports.login = catchasync(async (req, res, next) => {
     return next(new AppError('Invalid email or password', 401));
   }
 
-  const token = signToken(user._id);
-  // console.log(token);
-  res.status(200).json({
-    status: true,
-    token,
-  });
+  sendToken(user, 200, res);
 });
 
 exports.protect = catchasync(async (req, res, next) => {
@@ -78,11 +66,10 @@ exports.protect = catchasync(async (req, res, next) => {
     );
   //2) verifify the token
   const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  console.log(decode);
-  // console.log(decode);
+
   //3) check if user still exists
   const freshUser = await User.findById(decode.id);
-  console.log(freshUser);
+  // console.log(freshUser);
   if (!freshUser)
     return next(
       new AppError(
@@ -158,13 +145,13 @@ exports.forgotPassword = catchasync(async (req, res, next) => {
 exports.resetPassword = catchasync(async (req, res, next) => {
   //Get user based on the token
 
-  const hasedToken = crypto
+  const hashedToken = crypto
     .createHash('sha256')
     .update(req.params.token)
     .digest('hex');
 
   const user = await User.findOne({
-    passwordResetToken: hasedToken,
+    passwordResetToken: hashedToken,
     passwordResetExpires: { $gt: Date.now() },
   });
 
@@ -178,11 +165,34 @@ exports.resetPassword = catchasync(async (req, res, next) => {
   user.passwordConfirm = req.body.passwordConfirm;
   user.passwordResetToken = undefined;
   user.passwordResetExpires = undefined;
+
+  await user.save();
+  sendToken(user, 200, res);
+});
+
+exports.updatePassword = catchasync(async (req, res, next) => {
+  // Get the user
+  const user = await User.findById(req.user.id).select('+password');
+  if (!user) {
+    return next(new AppError('User not found. Please log in again.', 404));
+  }
+
+  // Compare passwords
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
+    return next(
+      new AppError(
+        'Password is incorrect. Provide the correct password to update.',
+        401
+      )
+    );
+  }
+
+  // Update the password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+
   await user.save();
 
-  const token = signToken(user._id);
-  res.status(200).json({
-    status: true,
-    token,
-  });
+  // Generate a new token and respond
+  sendToken(user, 200, res);
 });
