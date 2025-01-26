@@ -4,6 +4,7 @@ const catchasync = require('./../utils/catchAsync');
 const jwt = require('jsonwebtoken');
 const AppError = require('./../utils/AppError');
 const sendEmail = require('../utils/email');
+const crypto = require('crypto');
 // const { propfind } = require('../Routers/tourRouter');
 
 const signToken = (id) => {
@@ -77,9 +78,11 @@ exports.protect = catchasync(async (req, res, next) => {
     );
   //2) verifify the token
   const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log(decode);
   // console.log(decode);
   //3) check if user still exists
   const freshUser = await User.findById(decode.id);
+  console.log(freshUser);
   if (!freshUser)
     return next(
       new AppError(
@@ -152,4 +155,34 @@ exports.forgotPassword = catchasync(async (req, res, next) => {
     )
   );
 });
-exports.resetPassword = (req, res, next) => {};
+exports.resetPassword = catchasync(async (req, res, next) => {
+  //Get user based on the token
+
+  const hasedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hasedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new AppError('Invalid token or has expired', 400));
+  }
+
+  //changed the pasword for the user
+
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  const token = signToken(user._id);
+  res.status(200).json({
+    status: true,
+    token,
+  });
+});
