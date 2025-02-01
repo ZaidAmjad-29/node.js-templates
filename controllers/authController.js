@@ -15,6 +15,20 @@ const signToken = (id) => {
 
 const sendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
+
+  //storing jwt via cookie
+  const cookeOPtions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_CCOOKIE_EXIRES_IN * 24 * 60 * 60 * 1000
+    ),
+    secure: true,
+    httpOnly: true,
+  };
+  res.cookie('jwt', token, cookeOPtions);
+  //Do not send password to user when creating new user
+
+  user.password = undefined;
+
   res.status(statusCode).json({
     status: true,
     token,
