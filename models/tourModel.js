@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 const tourSchema = mongoose.Schema({
-
   name: {
     type: String,
     required: [true, 'A tour must have a name'],
@@ -54,6 +53,31 @@ const tourSchema = mongoose.Schema({
     type: String,
     trim: true,
   },
+
+  startLocation: {
+    type: {
+      type: String,
+      default: 'Point',
+      enum: ['Point'],
+    },
+    coordinates: [Number],
+    description: String,
+    address: String,
+  },
+  locations: [
+    {
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point'],
+      },
+      coordinates: [Number],
+      description: String,
+      address: String,
+      day: Number,
+    },
+  ],
+
   imageCover: {
     type: String,
     required: [true, 'Atour must have a cover image'],
